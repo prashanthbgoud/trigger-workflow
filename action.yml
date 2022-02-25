@@ -1,0 +1,70 @@
+name: Trigger Workflow
+description: Trigger a workflow with workflow dispatch event
+author: Prashanth Goud B
+inputs:
+  owner:
+    description: Owner of the GitHub repo
+    required: true
+  repo:
+    description: Name of the GitHub repo
+    required: true
+  repo_ref:
+    description: Specify the github reference where the workflow lives.
+    default: master
+    required: false
+  token:
+    description: Access token (PAT) for the repo
+    required: true
+  event_type:
+    description: The event type of the repository dispatch
+    required: false
+  workflow_file_name:
+    description: The workflow file name of the repository dispatch
+    required: false
+  client_payload:
+    description: Payload for the repository dispatch event
+    default: "{}"
+    required: false
+  wait_till_completion:
+    description: Wait for the job to complete
+    default: "true"
+    required: false
+  wait_time:
+    description: How long to wait between polls (seconds)
+    default: "10"
+    required: false
+  max_time:
+    description: Maximum amount of time to wait for workflow (seconds)
+    default: "600"
+    required: false
+outputs:
+  workflow-id:
+    description: "ID of the triggered workflow"
+    value: ${{ steps.dispatch.outputs.workflow-id }}
+  conclusion:
+    description: "Result of the triggered workflow"
+    value: ${{ steps.dispatch.outputs.conclusion }}
+runs:
+  using: "composite"
+  steps:
+    - id: dispatch
+      run: |
+        if [ "${{ inputs.workflow_file_name }}" == "" ] && [ "${{ inputs.event_type }}" != "" ]; then
+          ${{ github.action_path }}/dispatcher.sh
+        elif [ "${{ inputs.workflow_file_name }}" != "" ]; then
+          ${{ github.action_path }}/workflow_dispatcher.sh
+        else
+          echo "Must specify workflow_file_name or event_type"
+          exit 1
+        fi
+      shell: bash
+      env:
+        INPUT_WORKFLOW_FILE: ${{ inputs.workflow_file_name }}
+        INPUT_OWNER: ${{ inputs.owner }}
+        INPUT_REPO: ${{ inputs.repo }}
+        INPUT_TOKEN: ${{ inputs.token }}
+        INPUT_CLIENT_PAYLOAD: ${{ inputs.client_payload }}
+        INPUT_WAIT_TILL_COMPLETION: ${{ inputs.wait_till_completion }}
+        INPUT_WAIT_TIME: ${{ inputs.wait_time }}
+        INPUT_MAX_TIME: ${{ inputs.max_time }}
+        INPUT_REPO_REF: ${{ inputs.repo_ref }}
